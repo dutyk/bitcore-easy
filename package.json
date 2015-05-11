@@ -1,14 +1,18 @@
 {
   "name": "bitcore-easy",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A bitcore & bitcore-explorers wrapper library that makes using bitcoin easy",
   "main": "index.js",
   "dependencies": {
     "bitcore": "^0.12.4"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "chai": "^2.3.0",
+    "mocha": "^2.2.4",
+    "sinon": "^1.14.1"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha --reporter spec"
   },
   "repository": {
     "type": "git",
