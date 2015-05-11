@@ -1,0 +1,28 @@
+{
+  "name": "bitcore-easy",
+  "version": "0.0.1",
+  "description": "A bitcore & bitcore-explorers wrapper library that makes using bitcoin easy",
+  "main": "index.js",
+  "dependencies": {
+    "bitcore": "^0.12.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alejandrocarlos/bitcore-easy.git"
+  },
+  "keywords": [
+    "bitcore",
+    "explorers",
+    "bitcoin"
+  ],
+  "author": "Alejandro Carlos <axel.larcos@gmail.com> (https://github.com/alejandrocarlos)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alejandrocarlos/bitcore-easy/issues"
+  },
+  "homepage": "https://github.com/alejandrocarlos/bitcore-easy#readme"
+}
