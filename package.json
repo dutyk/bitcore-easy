@@ -4,7 +4,8 @@
   "description": "A bitcore & bitcore-explorers wrapper library that makes using bitcoin easy",
   "main": "index.js",
   "dependencies": {
-    "bitcore": "^0.12.4"
+    "bitcore": "^0.12.4",
+    "bitcore-explorers": "^0.11.0"
   },
   "devDependencies": {
     "chai": "^2.3.0",
