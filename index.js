@@ -1,37 +1,8 @@
 var bitcore = require('bitcore');
 var explorers = require('bitcore-explorers');
 var Networks = bitcore.Networks;
-var insight = null;
 
-/**
-* Generates a new Public and Private key pair
-* 
-* @param {boolean} testnet Indicates if testnet or livenet will be used
-* @return {object} {publicKey: String, privateKey: String}
-*/
-function generateWallet(testnet) {
-	if (testnet) {
-		network = Networks.testnet;
-	}else {
-		network = Networks.livenet;
-	}
-
-	var privateKey = new bitcore.PrivateKey(Networks.testnet); // Creating a new PrivateKey for use on the testnet
-
-	return {
-		publicKey: privateKey.publicKey.toAddress().toString(),
-		privateKey: privateKey.toString()
-	};
-}
-
-/**
-* Returns a list of unspent transactions outputs (utxos) for the given public address
-* 
-* @param {string} publicKey The public address to check for utxos 
-* @param {boolean} testnet Indicates if testnet or livenet will be used
-* @return {array}
-*/
-function getWalletUtxos(publicKey, testnet, callback) {
+function getNetwork(testnet) {
 	var nodeURL = null,
 		network = null;
 
@@ -43,14 +14,75 @@ function getWalletUtxos(publicKey, testnet, callback) {
 		network = Networks.livenet;
 	}
 
-	if (!bitcore.Address.isValid(publicKey, network)){
+	return {
+		nodeURL: nodeURL,
+		networkData: network
+	};
+}
+
+function getInsight(testnet) {
+	var network = getNetwork(testnet);
+
+	return new explorers.Insight(
+	  network.nodeURL,
+	  network.networkData
+	);
+}
+
+/**
+* Generates a new Public and Private key pair
+* 
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @return {object} {publicKey: String, privateKey: String}
+*/
+function generateWallet(testnet) {
+	var network = getNetwork(testnet);
+
+	var privateKey = new bitcore.PrivateKey(network.networkData); // Creating a new PrivateKey for use on the testnet
+
+	return {
+		publicKey: privateKey.publicKey.toAddress().toString(),
+		privateKey: privateKey.toString()
+	};
+}
+
+/**
+* Checks if a public address is valid
+* 
+* @param {string} The public address
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @return {boolean} If valid or not
+*/
+function publicAddressIsValid(publicKey, testnet) {
+	var network = getNetwork(testnet);
+
+	return bitcore.Address.isValid(publicKey, network.networkData);
+}
+
+/**
+* Checks if a private key is valid
+* 
+* @param {string} The private key
+* @return {boolean} If valid or not
+*/
+function privateKeyisValid(privateKey) {
+
+}
+
+/**
+* Returns a list of unspent transactions outputs (utxos) for the given public address
+* 
+* @param {string} publicKey The public address to check for utxos 
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @return {array}
+*/
+function getWalletUtxos(publicKey, testnet, callback) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet);
+
+	if (!publicAddressIsValid(publicKey, network.networkData)){
 		throw 'publicKey Must be valid';
 	}
-
-	insight = new explorers.Insight(
-	  nodeURL,
-	  network
-	);
 
 	insight.getUnspentUtxos(publicKey, function(err, utxos) {
 	  if (err) {
@@ -81,23 +113,7 @@ function getWalletTotal(publicKey, testnet, callback) {
 
 			callback(null, walletTotal);
 		}
-	})
-}
-
-/**
-* Returns a list of unspent transaction outputs (utxos) that will exceed
-* the specified amount of satoshis
-* 
-* @param {array} inputs A list of utxos to fund the amount
-* @param {number} amount Amount of satoshis that we need to reach
-* @return {array}
-*/
-function selectUnspentInputs(inputs, amount) {
-	var selected = [];
-
-
-
-	return selected;
+	});
 }
 
 /**
@@ -112,32 +128,58 @@ function selectUnspentInputs(inputs, amount) {
 * @param {string} receiverPublicAddress The wallet that will receive the specified amount
 * @return {string} A serialized transaction
 */
-function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateAddress, receiverPublicAddress) {
+function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateAddress, receiverPublicAddress, tesnet) {
 
-	if (utxos.length === 0) {
-		throw 'utxos length must be >= 1';
+	if (!utxos || utxos.length === 0) {
+		throw 'utxos must be >= 1';
 	}
 
-	if (amount == 0) {
+	if (!amount || amount <= 0) {
 		throw 'amount must be greater than 0';
+	}
+
+	if (!publicAddressIsValid(senderPublicAddress, tesnet)) {
+		throw 'senderPublicAddress must be a valid public address';
+	}
+	
+	if (!publicAddressIsValid(receiverPublicAddress, tesnet)) {
+		throw 'receiverPublicAddress must be a valid public address';
 	}
 
 	// We start creating the transaction
   var transaction = new bitcore.Transaction()
-  	.from(utxos) // Adding unspent transactions to fund this transaction
   	.to(receiverPublicAddress, amount) // Specifying the receiving address and the amount
-  	.change(senderPublicAddress) // Adding an address to receive remaining satoshis
-  	.sign(senderPrivateAddress); // Signing the transaction with the senders private key
+  	.change(senderPublicAddress);
+
+	var currentIndex = 0;
+	while (transaction.inputAmount < transaction.outputAmount) {
+		transaction.from(utxos[currentIndex]);
+		currentIndex++;
+
+		if (currentIndex === utxos.length) {
+			break;
+		}
+	}
 
   if (transaction.inputAmount < transaction.outputAmount) {
-  	throw 'Not enough inputs to fund transaction'
+  	throw 'Not enough inputs to fund transaction';
   }
 
-  return transaction.serialize();
+  // Signing the transaction with the senders private key
+  transaction.sign(senderPrivateAddress);
+
+  if (transaction.isFullySigned()) {
+  	return transaction.serialize();
+  } else {
+  	throw 'Invalid private key supplied';
+  }
 }
 
 module.exports = {
+	getNetwork: getNetwork,
+	getInsight: getInsight,
 	generateWallet: generateWallet,
-	getWalletUnspent: getWalletUnspent,
-	getWalletTotal: getWalletTotal
+	getWalletUtxos: getWalletUtxos,
+	getWalletTotal: getWalletTotal,
+	buildSimpleTransaction: buildSimpleTransaction
 };
