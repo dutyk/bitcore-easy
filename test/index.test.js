@@ -196,8 +196,46 @@ describe('bitcore-easy', function (){
 								);
 						}).to.throw('receiverPublicAddress must be a valid public address');
 
-						done();						
+						done();
 				});
 		});
+
+		it('excepts if an invalid senderPrivateKey is provided', function (done) {
+			BitcoreEasy
+				.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
+						expect(function () {
+							BitcoreEasy
+								.buildSimpleTransaction(
+									utxos, 
+									10000, 
+									validPublicAddress,
+									invalidPrivateKey,
+									validPublicAddress,
+									true
+								);
+						}).to.throw('senderPrivateKey must be valid');
+
+						done();
+				});
+		});
+
+		it('returns a valid serialized transaction', function (done) {
+			BitcoreEasy
+				.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
+						var transaction = BitcoreEasy.buildSimpleTransaction(
+								utxos, 
+								100000, 
+								validPublicAddress,
+								validPrivateKey,
+								validPublicAddress,
+								true
+							);
+
+						transaction.should.be.ok;
+						transaction.should.be.a('string');
+						done();
+				});
+		});
+		
 	});
 });

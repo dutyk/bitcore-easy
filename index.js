@@ -66,7 +66,7 @@ function publicAddressIsValid(publicKey, testnet) {
 * @return {boolean} If valid or not
 */
 function privateKeyisValid(privateKey) {
-
+	return bitcore.PrivateKey.isValid(privateKey);
 }
 
 /**
@@ -124,11 +124,11 @@ function getWalletTotal(publicKey, testnet, callback) {
 * @param {array} utxos A list of Unspent transaction outputs (utxos)
 * @param {integer} amount Amount of satoshis that will be sent to the receiving wallet
 * @param {string} senderPublicAddress The wallet that will be used to return remaining satoshis
-* @param {string} senderPrivateAddress The private key that will be used to sign utxos
+* @param {string} senderPrivateKey The private key that will be used to sign utxos
 * @param {string} receiverPublicAddress The wallet that will receive the specified amount
 * @return {string} A serialized transaction
 */
-function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateAddress, receiverPublicAddress, tesnet) {
+function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateKey, receiverPublicAddress, testnet) {
 
 	if (!utxos || utxos.length === 0) {
 		throw 'utxos must be >= 1';
@@ -138,40 +138,59 @@ function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivat
 		throw 'amount must be greater than 0';
 	}
 
-	if (!publicAddressIsValid(senderPublicAddress, tesnet)) {
+	if (!publicAddressIsValid(senderPublicAddress, testnet)) {
 		throw 'senderPublicAddress must be a valid public address';
 	}
 	
-	if (!publicAddressIsValid(receiverPublicAddress, tesnet)) {
+	if (!publicAddressIsValid(receiverPublicAddress, testnet)) {
 		throw 'receiverPublicAddress must be a valid public address';
+	}
+
+	if (!privateKeyisValid(senderPrivateKey)) {
+		throw 'senderPrivateKey must be valid';
 	}
 
 	// We start creating the transaction
   var transaction = new bitcore.Transaction()
+  	.from(utxos)
   	.to(receiverPublicAddress, amount) // Specifying the receiving address and the amount
   	.change(senderPublicAddress);
 
-	var currentIndex = 0;
-	while (transaction.inputAmount < transaction.outputAmount) {
-		transaction.from(utxos[currentIndex]);
-		currentIndex++;
+	// var currentIndex = 0;
+	// while (transaction.inputAmount < transaction.outputAmount) {
+	// 	var utxo = utxos[currentIndex];
 
-		if (currentIndex === utxos.length) {
-			break;
-		}
-	}
+	// 	transaction.from(utxo);
+	// 	// transaction.addInput(new bitcore.Input(
+	// 	// 	{
+	// 	// 		output: new bitcore.Transaction.Output({
+	//  //      script: utxo.script,
+	//  //      satoshis: utxo.satoshis
+	//  //    }),
+	//  //    prevTxId: utxo.txId,
+	//  //    outputIndex: utxo.outputIndex,
+	//  //    script: bitcore.Script.empty()
+	// 	// 	}
+	// 	// ));
+
+	// 	currentIndex++;
+
+	// 	if (currentIndex === utxos.length) {
+	// 		break;
+	// 	}
+	// }
 
   if (transaction.inputAmount < transaction.outputAmount) {
   	throw 'Not enough inputs to fund transaction';
   }
 
   // Signing the transaction with the senders private key
-  transaction.sign(senderPrivateAddress);
+  transaction.sign(senderPrivateKey);
 
   if (transaction.isFullySigned()) {
   	return transaction.serialize();
   } else {
-  	throw 'Invalid private key supplied';
+  	throw 'Transaction not fully signed';
   }
 }
 
