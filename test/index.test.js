@@ -9,35 +9,53 @@ describe('bitcore-easy', function (){
 	var Insight = require('bitcore-explorers').Insight,
 	  bitcore = require('bitcore'),
 	  validPublicAddress = 'mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr',
+	  validPublicAddress2 = '2MzEWqWAuxQp1RHXn7r9jnwhNBkeWFPPzTz',
 	  invalidPublicAddress = 'adsfjal;ksdfjkl;ajdfl;',
 	  validPrivateKey = '93Qw5WS8xm3MBvS7HPJ5FFQb5qqVjTqoGmtaBzBsGiRdB2ybpWb',
+	  validPrivateKey2 = '5J7JbCwxA36bKNhdySnjpP3EfEKHGZjDYR8Fr3piBZfM8VQNYjR';
 	  invalidPrivateKey = '93Qw5WS8xm3MBvS7HPJ5FFQb5qqVjTqoGmtaBzBRdB2ybpWb123';
+	  validPublicAddressUtxoCount = 5;
+	  validPublicAddressSatoshis = 177770000;
 
 	before(function(done) {
 		sinon
 			.stub(Insight.prototype, 'getUnspentUtxos')
 			.yields(
 				null, 
-				[	new bitcore.Transaction.UnspentOutput({
-						"address":"2MzEWqWAuxQp1RHXn7r9jnwhNBkeWFPPzTz",
-						"txid":"8c1524a5f1507ce1d958f74c46e2bc4f473415203e13fc7597c87891468bbf06",
-						"vout":0,
-						"scriptPubKey":"a9144ca6876f4f52954defb430dd65b814e6d556634487",
-						"amount":0.011
+				[	new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"7e83a32325216a12d83979dc0f1f8fd42b2b7144e80f327cd3710fa34c209d91",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.5
 					}),
-					new bitcore.Transaction.UnspentOutput({
-						"address":"2MzEWqWAuxQp1RHXn7r9jnwhNBkeWFPPzTz",
-						"txid":"301fcbf89a56244f513e1edfd06e6c8568c615e752b1cbac765c96c7017850ef",
-						"vout":0,
-						"scriptPubKey":"a9144ca6876f4f52954defb430dd65b814e6d556634487",
-						"amount":0.011
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"807905736ba868a179f675964569a9bb396633505ba2a7840f695e8981fc33f3",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.2
 					}),
-					new bitcore.Transaction.UnspentOutput({
-						"address":"2MzEWqWAuxQp1RHXn7r9jnwhNBkeWFPPzTz",
-						"txid":"70657bd8a67018d44053731255bb1a11cb0b20c15a2413c77f04d2ee7ca05c6d",
-						"vout":1,
-						"scriptPubKey":"a9144ca6876f4f52954defb430dd65b814e6d556634487",
-						"amount":0.9399
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"eee2073abb3ac431fa9c5eeaac64f5c1cc05752de8b6febe4e705322d06fdbed",
+					  "vout":0,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.15
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"8c1524a5f1507ce1d958f74c46e2bc4f473415203e13fc7597c87891468bbf06",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.8777
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"70657bd8a67018d44053731255bb1a11cb0b20c15a2413c77f04d2ee7ca05c6d",
+					  "vout":0,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.05
 					})
 				]
 			);
@@ -69,9 +87,9 @@ describe('bitcore-easy', function (){
 	describe('#generateWallet', function() {
 		var wallet = BitcoreEasy.generateWallet();
 		
-		it('creates a wallet with a non empty public key', function () {
-			wallet.should.have.property('publicKey');
-			wallet.publicKey.should.be.a('string');
+		it('creates a wallet with a non empty public address', function () {
+			wallet.should.have.property('publicAddress');
+			wallet.publicAddress.should.be.a('string');
 		});
 
 		it('creates a wallet with a non empty private key', function () {
@@ -81,14 +99,22 @@ describe('bitcore-easy', function (){
 	});
 
 	describe('#publicAddressIsValid', function () {
-		var validAddress = 
-
 		it('return false when an invalid address is provided', function () {
-
+			BitcoreEasy.publicAddressIsValid(invalidPublicAddress, true).should.be.false;
 		});
 
-		it('return true when an invalid address is provided', function () {
-			
+		it('return true when an valid address is provided', function () {
+			BitcoreEasy.publicAddressIsValid(validPublicAddress, true).should.be.ok;
+		});
+	});
+
+	describe('#privateKeyIsValid', function () {
+		it('return false when an invalid address is provided', function () {
+			BitcoreEasy.privateKeyIsValid(invalidPrivateKey).should.be.false;
+		});
+
+		it('return true when an valid address is provided', function () {
+			BitcoreEasy.privateKeyIsValid(validPrivateKey).should.be.ok;
 		});
 	});
 
@@ -103,7 +129,7 @@ describe('bitcore-easy', function (){
 			BitcoreEasy.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
 				expect(err).to.be.null;
 				utxos.should.not.be.empty;
-				utxos.should.have.length(3);
+				utxos.should.have.length(validPublicAddressUtxoCount);
 				done();
 			});
 
@@ -114,14 +140,14 @@ describe('bitcore-easy', function (){
 		it('excepts with an invalid public address', function () {
 			expect(function(){
 				BitcoreEasy.getWalletTotal(invalidPublicAddress, true);
-			}).to.throw('publicKey Must be valid');
+			}).to.throw(BitcoreEasy.errors.PUBLIKEY_MUST_BE_VALID);
 		});
 
 		it('returns a numeric wallet value equaling the sum of satoshis from utxos', function(done) {
 			BitcoreEasy.getWalletTotal(validPublicAddress, true, function(err, walletTotal) {
 				expect(err).to.be.null;
 				walletTotal.should.be.a('number');
-				walletTotal.should.equal(96190000);
+				walletTotal.should.equal(validPublicAddressSatoshis);
 				done();
 			});
 
@@ -140,7 +166,7 @@ describe('bitcore-easy', function (){
 						null,
 						true
 					);
-			}).to.throw('utxos must be >= 1');
+			}).to.throw(BitcoreEasy.errors.NOT_ENOUGH_UTXOS);
 		});
 
 		it('excepts if a zero value amount is given', function (done) {
@@ -156,7 +182,7 @@ describe('bitcore-easy', function (){
 									null,
 									true
 								);
-						}).to.throw('amount must be greater than 0');
+						}).to.throw(BitcoreEasy.errors.INVALID_AMOUNT);
 
 						done();						
 				});
@@ -175,7 +201,7 @@ describe('bitcore-easy', function (){
 									validPublicAddress,
 									true
 								);
-						}).to.throw('senderPublicAddress must be a valid public address');
+						}).to.throw(BitcoreEasy.errors.INVALID_SENDER_ADDRESS);
 
 						done();						
 				});
@@ -194,7 +220,7 @@ describe('bitcore-easy', function (){
 									invalidPublicAddress,
 									true
 								);
-						}).to.throw('receiverPublicAddress must be a valid public address');
+						}).to.throw(BitcoreEasy.errors.INVALID_RECEIVER_ADDRESS);
 
 						done();
 				});
@@ -213,8 +239,44 @@ describe('bitcore-easy', function (){
 									validPublicAddress,
 									true
 								);
-						}).to.throw('senderPrivateKey must be valid');
+						}).to.throw(BitcoreEasy.errors.INVALID_SENDER_PRIVATE_KEY);
 
+						done();
+				});
+		});
+
+		it('excepts if not enough satoshis are available in utxos', function (done) {
+			BitcoreEasy
+				.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
+						expect(function () {
+							BitcoreEasy.buildSimpleTransaction(
+								utxos, 
+								1000000000, 
+								validPublicAddress,
+								validPrivateKey,
+								validPublicAddress2,
+								true
+							);
+						}).to.throw(BitcoreEasy.errors.NOT_ENOUGH_INPUTS);
+						
+						done();
+				});
+		});
+
+		it('excepts if inputs are not signed', function (done) {
+			BitcoreEasy
+				.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
+						expect(function () {
+							BitcoreEasy.buildSimpleTransaction(
+								utxos, 
+								100000000, 
+								validPublicAddress,
+								validPrivateKey2,
+								validPublicAddress2,
+								true
+							);
+						}).to.throw(BitcoreEasy.errors.TRANSACTION_NOT_SIGNED);
+						
 						done();
 				});
 		});
@@ -224,13 +286,12 @@ describe('bitcore-easy', function (){
 				.getWalletUtxos(validPublicAddress, true, function(err, utxos) {
 						var transaction = BitcoreEasy.buildSimpleTransaction(
 								utxos, 
-								100000, 
+								100000000, 
 								validPublicAddress,
 								validPrivateKey,
-								validPublicAddress,
+								validPublicAddress2,
 								true
 							);
-
 						transaction.should.be.ok;
 						transaction.should.be.a('string');
 						done();

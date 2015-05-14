@@ -2,6 +2,18 @@ var bitcore = require('bitcore');
 var explorers = require('bitcore-explorers');
 var Networks = bitcore.Networks;
 
+var errors = {
+	PUBLIKEY_MUST_BE_VALID: 'publicKey Must be valid',
+	NOT_ENOUGH_UTXOS: 'utxos must be >= 1',
+	INVALID_AMOUNT: 'amount must be greater than 0',
+	INVALID_SENDER_ADDRESS: 'senderPublicAddress must be a valid public address',
+	INVALID_RECEIVER_ADDRESS: 'receiverPublicAddress must be a valid public address',
+	INVALID_SENDER_PRIVATE_KEY: 'senderPrivateKey must be valid',
+	NOT_ENOUGH_INPUTS: 'Not enough inputs to fund transaction',
+	TRANSACTION_NOT_SIGNED: 'Transaction not fully signed'
+};
+
+
 function getNetwork(testnet) {
 	var nodeURL = null,
 		network = null;
@@ -33,7 +45,7 @@ function getInsight(testnet) {
 * Generates a new Public and Private key pair
 * 
 * @param {boolean} testnet Indicates if testnet or livenet will be used
-* @return {object} {publicKey: String, privateKey: String}
+* @return {object} {publicAddress: String, privateKey: String}
 */
 function generateWallet(testnet) {
 	var network = getNetwork(testnet);
@@ -41,7 +53,7 @@ function generateWallet(testnet) {
 	var privateKey = new bitcore.PrivateKey(network.networkData); // Creating a new PrivateKey for use on the testnet
 
 	return {
-		publicKey: privateKey.publicKey.toAddress().toString(),
+		publicAddress: privateKey.publicKey.toAddress().toString(),
 		privateKey: privateKey.toString()
 	};
 }
@@ -65,7 +77,7 @@ function publicAddressIsValid(publicKey, testnet) {
 * @param {string} The private key
 * @return {boolean} If valid or not
 */
-function privateKeyisValid(privateKey) {
+function privateKeyIsValid(privateKey) {
 	return bitcore.PrivateKey.isValid(privateKey);
 }
 
@@ -81,7 +93,7 @@ function getWalletUtxos(publicKey, testnet, callback) {
 		insight = getInsight(testnet);
 
 	if (!publicAddressIsValid(publicKey, network.networkData)){
-		throw 'publicKey Must be valid';
+		throw errors.PUBLIKEY_MUST_BE_VALID;
 	}
 
 	insight.getUnspentUtxos(publicKey, function(err, utxos) {
@@ -131,57 +143,43 @@ function getWalletTotal(publicKey, testnet, callback) {
 function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateKey, receiverPublicAddress, testnet) {
 
 	if (!utxos || utxos.length === 0) {
-		throw 'utxos must be >= 1';
+		throw errors.NOT_ENOUGH_UTXOS;
 	}
 
 	if (!amount || amount <= 0) {
-		throw 'amount must be greater than 0';
+		throw errors.INVALID_AMOUNT;
 	}
 
 	if (!publicAddressIsValid(senderPublicAddress, testnet)) {
-		throw 'senderPublicAddress must be a valid public address';
+		throw errors.INVALID_SENDER_ADDRESS;
 	}
 	
 	if (!publicAddressIsValid(receiverPublicAddress, testnet)) {
-		throw 'receiverPublicAddress must be a valid public address';
+		throw errors.INVALID_RECEIVER_ADDRESS;
 	}
 
-	if (!privateKeyisValid(senderPrivateKey)) {
-		throw 'senderPrivateKey must be valid';
+	if (!privateKeyIsValid(senderPrivateKey)) {
+		throw errors.INVALID_SENDER_PRIVATE_KEY;
 	}
 
 	// We start creating the transaction
   var transaction = new bitcore.Transaction()
-  	.from(utxos)
   	.to(receiverPublicAddress, amount) // Specifying the receiving address and the amount
   	.change(senderPublicAddress);
 
-	// var currentIndex = 0;
-	// while (transaction.inputAmount < transaction.outputAmount) {
-	// 	var utxo = utxos[currentIndex];
-
-	// 	transaction.from(utxo);
-	// 	// transaction.addInput(new bitcore.Input(
-	// 	// 	{
-	// 	// 		output: new bitcore.Transaction.Output({
-	//  //      script: utxo.script,
-	//  //      satoshis: utxo.satoshis
-	//  //    }),
-	//  //    prevTxId: utxo.txId,
-	//  //    outputIndex: utxo.outputIndex,
-	//  //    script: bitcore.Script.empty()
-	// 	// 	}
-	// 	// ));
-
-	// 	currentIndex++;
-
-	// 	if (currentIndex === utxos.length) {
-	// 		break;
-	// 	}
-	// }
+	var currentIndex = 0;
+	while (transaction.inputAmount < transaction.outputAmount) {
+		var utxo = utxos[currentIndex];
+		transaction.from(utxo);
+		
+		currentIndex++;
+		if (currentIndex === utxos.length) {
+			break;
+		}
+	}
 
   if (transaction.inputAmount < transaction.outputAmount) {
-  	throw 'Not enough inputs to fund transaction';
+  	throw errors.NOT_ENOUGH_INPUTS;
   }
 
   // Signing the transaction with the senders private key
@@ -190,14 +188,17 @@ function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivat
   if (transaction.isFullySigned()) {
   	return transaction.serialize();
   } else {
-  	throw 'Transaction not fully signed';
+  	throw errors.TRANSACTION_NOT_SIGNED;
   }
 }
 
 module.exports = {
+	errors: errors,
 	getNetwork: getNetwork,
-	getInsight: getInsight,
+	getInsight: getInsight,	
 	generateWallet: generateWallet,
+	publicAddressIsValid: publicAddressIsValid,
+	privateKeyIsValid: privateKeyIsValid,
 	getWalletUtxos: getWalletUtxos,
 	getWalletTotal: getWalletTotal,
 	buildSimpleTransaction: buildSimpleTransaction
