@@ -3,14 +3,16 @@ var explorers = require('bitcore-explorers');
 var Networks = bitcore.Networks;
 
 var errors = {
-	PUBLIKEY_MUST_BE_VALID: 'publicKey Must be valid',
+	PUBLIC_ADDRESS_MUST_BE_VALID: 'publicAddress Must be valid',
 	NOT_ENOUGH_UTXOS: 'utxos must be >= 1',
 	INVALID_AMOUNT: 'amount must be greater than 0',
 	INVALID_SENDER_ADDRESS: 'senderPublicAddress must be a valid public address',
 	INVALID_RECEIVER_ADDRESS: 'receiverPublicAddress must be a valid public address',
 	INVALID_SENDER_PRIVATE_KEY: 'senderPrivateKey must be valid',
 	NOT_ENOUGH_INPUTS: 'Not enough inputs to fund transaction',
-	TRANSACTION_NOT_SIGNED: 'Transaction not fully signed'
+	TRANSACTION_NOT_SIGNED: 'Transaction not fully signed',
+	INVALID_TRANSACTION: "transaction must be valid",
+
 };
 
 
@@ -43,14 +45,24 @@ function getInsight(testnet) {
 
 /**
 * Generates a new Public and Private key pair
-* 
+*
 * @param {boolean} testnet Indicates if testnet or livenet will be used
+* @param {string} hashValue Value used to
 * @return {object} {publicAddress: String, privateKey: String}
 */
-function generateWallet(testnet) {
+function generateWallet(testnet, hashValue) {
 	var network = getNetwork(testnet);
+	var privateKey = null;
 
-	var privateKey = new bitcore.PrivateKey(network.networkData); // Creating a new PrivateKey for use on the testnet
+	if (hash) {
+		var value = new Buffer(hashValue);
+		var hash = bitcore.crypto.Hash.sha256(value);
+		var bn = bitcore.crypto.BN.fromBuffer(hash);
+
+		privateKey = new bitcore.PrivateKey(bn, network.networkData);
+	} else {
+		privateKey = new bitcore.PrivateKey(null, network.networkData);
+	}
 
 	return {
 		publicAddress: privateKey.publicKey.toAddress().toString(),
@@ -60,20 +72,20 @@ function generateWallet(testnet) {
 
 /**
 * Checks if a public address is valid
-* 
+*
 * @param {string} The public address
 * @param {boolean} testnet Indicates if testnet or livenet will be used
 * @return {boolean} If valid or not
 */
-function publicAddressIsValid(publicKey, testnet) {
+function publicAddressIsValid(publicAddress, testnet) {
 	var network = getNetwork(testnet);
 
-	return bitcore.Address.isValid(publicKey, network.networkData);
+	return bitcore.Address.isValid(publicAddress, network.networkData);
 }
 
 /**
 * Checks if a private key is valid
-* 
+*
 * @param {string} The private key
 * @return {boolean} If valid or not
 */
@@ -83,20 +95,21 @@ function privateKeyIsValid(privateKey) {
 
 /**
 * Returns a list of unspent transactions outputs (utxos) for the given public address
-* 
-* @param {string} publicKey The public address to check for utxos 
+*
+* @param {string} publicAddress The public address to check for utxos
 * @param {boolean} testnet Indicates if testnet or livenet will be used
+* @param {function} callback Will be called when done. Signature function(err, data)
 * @return {array}
 */
-function getWalletUtxos(publicKey, testnet, callback) {
+function getWalletUtxos(publicAddress, testnet, callback) {
 	var network = getNetwork(testnet),
 		insight = getInsight(testnet);
 
-	if (!publicAddressIsValid(publicKey, network.networkData)){
-		throw errors.PUBLIKEY_MUST_BE_VALID;
+	if (!publicAddressIsValid(publicAddress, network.networkData)){
+		throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
 	}
 
-	insight.getUnspentUtxos(publicKey, function(err, utxos) {
+	insight.getUnspentUtxos(publicAddress, function(err, utxos) {
 	  if (err) {
 	    callback(err, null);
 	  } else {
@@ -107,15 +120,15 @@ function getWalletUtxos(publicKey, testnet, callback) {
 
 /**
 * Returns the total wallet value based on unspent transactions outputs (utxos)
-* 
-* @param {string} publicKey The public address to check for utxos 
+*
+* @param {string} publicAddress The public address to check for utxos
 * @param {boolean} testnet Indicates if testnet or livenet will be used
-* @return {number}
+* @param {function} callback Will be called when done. Signature function(err, data)
 */
-function getWalletTotal(publicKey, testnet, callback) {
+function getWalletTotal(publicAddress, testnet, callback) {
 	var walletTotal = 0;
 
-	getWalletUtxos(publicKey, testnet, function(err, utxos) {
+	getWalletUtxos(publicAddress, testnet, function(err, utxos) {
 		if (err) {
 			callback(err, null);
 		} else {
@@ -130,9 +143,9 @@ function getWalletTotal(publicKey, testnet, callback) {
 
 /**
 * Builds a serialized transaction from one public address to another
-* It only supports a single receiving address. 
+* It only supports a single receiving address.
 *	Remaining satoshis minus transaction fees will be sent back to the sender's wallet
-* 
+*
 * @param {array} utxos A list of Unspent transaction outputs (utxos)
 * @param {integer} amount Amount of satoshis that will be sent to the receiving wallet
 * @param {string} senderPublicAddress The wallet that will be used to return remaining satoshis
@@ -153,7 +166,7 @@ function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivat
 	if (!publicAddressIsValid(senderPublicAddress, testnet)) {
 		throw errors.INVALID_SENDER_ADDRESS;
 	}
-	
+
 	if (!publicAddressIsValid(receiverPublicAddress, testnet)) {
 		throw errors.INVALID_RECEIVER_ADDRESS;
 	}
@@ -171,7 +184,7 @@ function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivat
 	while (transaction.inputAmount < transaction.outputAmount) {
 		var utxo = utxos[currentIndex];
 		transaction.from(utxo);
-		
+
 		currentIndex++;
 		if (currentIndex === utxos.length) {
 			break;
@@ -192,14 +205,70 @@ function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivat
   }
 }
 
+/**
+* Sends a serialized transaction to the bitcoin network using bitpay's node
+*
+* @param {string} senderPublicAddress The wallet that will be used to return remaining satoshis
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @param {function} callback Will be called when done. Signature function(err, data)
+*/
+function broadcastTransaction(serializedTransaction, testnet, callback) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet),
+		transaction = null;
+
+		try {
+			transaction = bitcore.Transaction(serializedTransaction);
+		} catch (exception) {
+			throw errors.INVALID_TRANSACTION;
+		}
+
+		if (transaction.verify() !== true) {
+			throw errors.INVALID_TRANSACTION;
+		}
+
+		if (!transaction.isFullySigned()) {
+			throw errors.TRANSACTION_NOT_SIGNED;
+		}
+
+		insight.broadcast(serializedTransaction, function (err, txid) {
+		  if (err) {
+		  	callback(err, null);
+		  } else {
+		  	callback(null, txid);
+		  }
+		});
+}
+
+/**
+* Retrieves a transaction's information from the bitpay API
+*
+* @param {string} txid The transaction id you want to check
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @param {function} callback Will be called when done. Signature function(err, data)
+*/
+function getTransactionInfo(txid, testnet, callback) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet);
+
+		insight.requestGet('/api/tx/' + txid, function (err, res, body) {
+		  if (err) {
+		  	callback(err, null);
+		  } else {
+		  	callback(null, JSON.parse(body));
+		  }
+		});
+}
+
 module.exports = {
 	errors: errors,
 	getNetwork: getNetwork,
-	getInsight: getInsight,	
+	getInsight: getInsight,
 	generateWallet: generateWallet,
 	publicAddressIsValid: publicAddressIsValid,
 	privateKeyIsValid: privateKeyIsValid,
 	getWalletUtxos: getWalletUtxos,
 	getWalletTotal: getWalletTotal,
-	buildSimpleTransaction: buildSimpleTransaction
+	buildSimpleTransaction: buildSimpleTransaction,
+	broadcastTransaction: broadcastTransaction
 };
