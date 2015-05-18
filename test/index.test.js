@@ -1,3 +1,5 @@
+/*jshint expr: true*/
+
 var
 	chai = require('chai'),
 	should = require('chai').should(),

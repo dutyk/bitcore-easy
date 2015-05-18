@@ -270,5 +270,6 @@ module.exports = {
 	getWalletUtxos: getWalletUtxos,
 	getWalletTotal: getWalletTotal,
 	buildSimpleTransaction: buildSimpleTransaction,
-	broadcastTransaction: broadcastTransaction
+	broadcastTransaction: broadcastTransaction,
+	getTransactionInfo: getTransactionInfo
 };
