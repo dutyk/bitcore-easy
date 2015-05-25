@@ -12,7 +12,7 @@ var errors = {
 	NOT_ENOUGH_INPUTS: 'Not enough inputs to fund transaction',
 	TRANSACTION_NOT_SIGNED: 'Transaction not fully signed',
 	INVALID_TRANSACTION: "transaction must be valid",
-
+	TRANSACTION_ID_MUST_BE_PRESENT: 'transaction id must be present'
 };
 
 
@@ -227,10 +227,6 @@ function broadcastTransaction(serializedTransaction, testnet, callback) {
 			throw errors.INVALID_TRANSACTION;
 		}
 
-		if (!transaction.isFullySigned()) {
-			throw errors.TRANSACTION_NOT_SIGNED;
-		}
-
 		insight.broadcast(serializedTransaction, function (err, txid) {
 		  if (err) {
 		  	callback(err, null);
@@ -250,6 +246,10 @@ function broadcastTransaction(serializedTransaction, testnet, callback) {
 function getTransactionInfo(txid, testnet, callback) {
 	var network = getNetwork(testnet),
 		insight = getInsight(testnet);
+
+		if (txid === undefined || txid === null || !txid) {
+			throw errors.TRANSACTION_ID_MUST_BE_PRESENT;
+		}
 
 		insight.requestGet('/api/tx/' + txid, function (err, res, body) {
 		  if (err) {
