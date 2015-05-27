@@ -1,6 +1,8 @@
 var bitcore = require('bitcore');
 var explorers = require('bitcore-explorers');
 var Networks = bitcore.Networks;
+var Promise = require('es6-promise').Promise;
+var _ = require('lodash');
 
 var errors = {
 	PUBLIC_ADDRESS_MUST_BE_VALID: 'publicAddress Must be valid',
@@ -15,7 +17,12 @@ var errors = {
 	TRANSACTION_ID_MUST_BE_PRESENT: 'transaction id must be present'
 };
 
-
+/**
+* Returns the URL and network data for the specified network
+*
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @return {object} {nodeURL: String, network: object}
+*/
 function getNetwork(testnet) {
 	var nodeURL = null,
 		network = null;
@@ -34,6 +41,12 @@ function getNetwork(testnet) {
 	};
 }
 
+/**
+* Returns an bitcore-explorers Insight instance
+*
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @return {Insight} An instance of bitcore-explorers Insight
+*/
 function getInsight(testnet) {
 	var network = getNetwork(testnet);
 
@@ -98,10 +111,9 @@ function privateKeyIsValid(privateKey) {
 *
 * @param {string} publicAddress The public address to check for utxos
 * @param {boolean} testnet Indicates if testnet or livenet will be used
-* @param {function} callback Will be called when done. Signature function(err, data)
-* @return {array}
+* @return {Promise} Returns a Promise that resolves with an array of utxos
 */
-function getWalletUtxos(publicAddress, testnet, callback) {
+function getWalletUtxos(publicAddress, testnet) {
 	var network = getNetwork(testnet),
 		insight = getInsight(testnet);
 
@@ -109,12 +121,14 @@ function getWalletUtxos(publicAddress, testnet, callback) {
 		throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
 	}
 
-	insight.getUnspentUtxos(publicAddress, function(err, utxos) {
-	  if (err) {
-	    callback(err, null);
-	  } else {
-	    callback(null, utxos);
-	  }
+	return new Promise(function(resolve, reject){
+		insight.getUnspentUtxos(publicAddress, function(err, utxos) {
+		  if (err) {
+				reject(err);
+		  } else {
+				resolve(utxos);
+		  }
+		});
 	});
 }
 
@@ -123,21 +137,70 @@ function getWalletUtxos(publicAddress, testnet, callback) {
 *
 * @param {string} publicAddress The public address to check for utxos
 * @param {boolean} testnet Indicates if testnet or livenet will be used
-* @param {function} callback Will be called when done. Signature function(err, data)
+* @param {Promise} A promise that resolves with the total on the wallet
 */
-function getWalletTotal(publicAddress, testnet, callback) {
-	var walletTotal = 0;
+function getWalletTotal(publicAddress, testnet) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet),
+		walletTotal = 0;
 
-	getWalletUtxos(publicAddress, testnet, function(err, utxos) {
-		if (err) {
-			callback(err, null);
-		} else {
-			utxos.forEach(function (element, index, array) {
-				walletTotal += element.satoshis;
+	if (!publicAddressIsValid(publicAddress, network.networkData)){
+		throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
+	}
+
+	return new Promise(function(resolve, reject) {
+		getWalletUtxos(publicAddress, testnet)
+			.then(function(utxos) {
+				utxos.forEach(function (element, index, array) {
+					walletTotal += element.satoshis;
+				});
+
+				resolve(walletTotal);
+			})
+			.catch(function(error) {
+
 			});
+	});
+}
 
-			callback(null, walletTotal);
-		}
+/**
+* Returns the total confirmed wallet value based on unspent transactions outputs
+* (utxos)
+*
+* @param {string} publicAddress The public address to check for utxos
+* @param {boolean} testnet Indicates if testnet or livenet will be used
+* @param {number} confirmations The number of confirmations needed for a
+*																transaction to be valid
+* @param {Promise} A promise that resolves with the total on the wallet
+*/
+function getConfirmedWalletTotal(publicAddress, testnet, confirmations) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet),
+		walletTotal = 0;
+
+	if (!publicAddressIsValid(publicAddress, network.networkData)){
+		throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
+	}
+
+	return getWalletUtxos(publicAddress, testnet)
+	.then(function(utxos) {
+		var checked = 0;
+		console.log('GOT UTXOS');
+
+		return Promise.all(_.map(utxos, function(item) {
+			return getTransactionInfo(item.txId, testnet);
+		}));
+	})
+	.then(function(data){
+		console.log('GOT ALL INFO');
+		data.forEach(function (element, index, array) {
+			console.log('TX INFOS: ', element);
+		});
+
+		console.log('TOTOTAL: ', walletTotal);
+	})
+	.catch(function(error) {
+		console.log('ERROR: ', error);
 	});
 }
 
@@ -151,6 +214,7 @@ function getWalletTotal(publicAddress, testnet, callback) {
 * @param {string} senderPublicAddress The wallet that will be used to return remaining satoshis
 * @param {string} senderPrivateKey The private key that will be used to sign utxos
 * @param {string} receiverPublicAddress The wallet that will receive the specified amount
+* @param {boolean} testnet Indicated if testnext or livenet will be used
 * @return {string} A serialized transaction
 */
 function buildSimpleTransaction(utxos, amount, senderPublicAddress, senderPrivateKey, receiverPublicAddress, testnet) {
@@ -241,9 +305,9 @@ function broadcastTransaction(serializedTransaction, testnet, callback) {
 *
 * @param {string} txid The transaction id you want to check
 * @param {boolean} testnet Indicates if testnet or livenet will be used
-* @param {function} callback Will be called when done. Signature function(err, data)
+* @param {function} callback Will be called when done. Signature function(err, txData)
 */
-function getTransactionInfo(txid, testnet, callback) {
+function getTransactionInfo(txid, testnet) {
 	var network = getNetwork(testnet),
 		insight = getInsight(testnet);
 
@@ -251,13 +315,16 @@ function getTransactionInfo(txid, testnet, callback) {
 			throw errors.TRANSACTION_ID_MUST_BE_PRESENT;
 		}
 
-		insight.requestGet('/api/tx/' + txid, function (err, res, body) {
-		  if (err) {
-		  	callback(err, null);
-		  } else {
-		  	callback(null, JSON.parse(body));
-		  }
-		});
+		return new Promise(function(resolve, reject) {
+			insight.requestGet('/api/tx/' + txid, function (err, res, body) {
+			  if (err) {
+			  	reject(err);
+			  } else {
+			  	resolve(JSON.parse(body));
+			  }
+			});
+		})
+		.catch(console.log.bind(console));
 }
 
 module.exports = {
@@ -269,6 +336,7 @@ module.exports = {
 	privateKeyIsValid: privateKeyIsValid,
 	getWalletUtxos: getWalletUtxos,
 	getWalletTotal: getWalletTotal,
+	getConfirmedWalletTotal: getConfirmedWalletTotal,
 	buildSimpleTransaction: buildSimpleTransaction,
 	broadcastTransaction: broadcastTransaction,
 	getTransactionInfo: getTransactionInfo
