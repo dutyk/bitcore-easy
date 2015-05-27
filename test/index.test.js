@@ -24,56 +24,56 @@ describe('bitcore-easy', function (){
 		transactionData = '{"txid":"eee2073abb3ac431fa9c5eeaac64f5c1cc05752de8b6febe4e705322d06fdbed","version":1,"locktime":0,"vin":[{"txid":"7e83a32325216a12d83979dc0f1f8fd42b2b7144e80f327cd3710fa34c209d91","vout":0,"scriptSig":{"asm":"0 304402203740418e972d2f78fe6625635cab53e9ad8c273dd1e9b42d1acb4454cfd95bdd022014f9ba8d4334feaa3e7e1c1d8d9efc6423681e76b667dae6c3620326af0dd1ee01 304402205a39252d27a1b5bd9fe4093cd852b460cdca5d9c29aeb5f27c1213c024dbcbd60220567fd98bd671fe2dd37cb285cfc985308e8c1b2b101a52ed8ebc620d6f59af7f01 5221020aca07670b678591e9d8676615eccd3f1e563a38acc754c53955efd97f97e0e221028a1c96eade44630aad894e74398b2318a1ed3c25097528ac5a53fd297a2f49c12103c34268472afc90aada71a2e86db87b09304d5060a54500c34272efbbee50838853ae","hex":"0047304402203740418e972d2f78fe6625635cab53e9ad8c273dd1e9b42d1acb4454cfd95bdd022014f9ba8d4334feaa3e7e1c1d8d9efc6423681e76b667dae6c3620326af0dd1ee0147304402205a39252d27a1b5bd9fe4093cd852b460cdca5d9c29aeb5f27c1213c024dbcbd60220567fd98bd671fe2dd37cb285cfc985308e8c1b2b101a52ed8ebc620d6f59af7f014c695221020aca07670b678591e9d8676615eccd3f1e563a38acc754c53955efd97f97e0e221028a1c96eade44630aad894e74398b2318a1ed3c25097528ac5a53fd297a2f49c12103c34268472afc90aada71a2e86db87b09304d5060a54500c34272efbbee50838853ae"},"sequence":4294967295,"n":0,"addr":"2MwELoDaW1sK66fGpKc3oCiTyvANUG5YiVx","valueSat":23970000,"value":0.2397,"doubleSpentTxID":null}],"vout":[{"value":"0.15000000","n":0,"scriptPubKey":{"asm":"OP_DUP OP_HASH160 016ac79b56cc72a7cef8ab86b85bc606f45a2e36 OP_EQUALVERIFY OP_CHECKSIG","hex":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac","reqSigs":1,"type":"pubkeyhash","addresses":["mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr"]}},{"value":"0.08960000","n":1,"scriptPubKey":{"asm":"OP_HASH160 91cac8b6b74d2f2bad3168e0a757e261994c06af OP_EQUAL","hex":"a91491cac8b6b74d2f2bad3168e0a757e261994c06af87","reqSigs":1,"type":"scripthash","addresses":["2N6Y6tnGfGmTt2BVaUd9YtQrpTW1FSxEEzJ"]}}],"blockhash":"000000000816fca92ab655c9efaca63bcbdc95d631b408ead9fcf1459910e284","confirmations":30842,"time":1431630687,"blocktime":1431630687,"valueOut":0.2396,"size":369,"valueIn":0.2397,"fees":0.0001}';
 
 	before(function (done) {
-		// sinon
-		// 	.stub(Insight.prototype, 'getUnspentUtxos')
-		// 	.yields(
-		// 		null,
-		// 		[	new bitcore.Transaction.UnspentOutput.fromObject({
-		// 				"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
-		// 			  "txid":"7e83a32325216a12d83979dc0f1f8fd42b2b7144e80f327cd3710fa34c209d91",
-		// 			  "vout":1,
-		// 			  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
-		// 			  "amount":0.5
-		// 			}),
-		// 			new bitcore.Transaction.UnspentOutput.fromObject({
-		// 				"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
-		// 			  "txid":"807905736ba868a179f675964569a9bb396633505ba2a7840f695e8981fc33f3",
-		// 			  "vout":1,
-		// 			  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
-		// 			  "amount":0.2
-		// 			}),
-		// 			new bitcore.Transaction.UnspentOutput.fromObject({
-		// 				"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
-		// 			  "txid":"eee2073abb3ac431fa9c5eeaac64f5c1cc05752de8b6febe4e705322d06fdbed",
-		// 			  "vout":0,
-		// 			  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
-		// 			  "amount":0.15
-		// 			}),
-		// 			new bitcore.Transaction.UnspentOutput.fromObject({
-		// 				"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
-		// 			  "txid":"8c1524a5f1507ce1d958f74c46e2bc4f473415203e13fc7597c87891468bbf06",
-		// 			  "vout":1,
-		// 			  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
-		// 			  "amount":0.8777
-		// 			}),
-		// 			new bitcore.Transaction.UnspentOutput.fromObject({
-		// 				"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
-		// 			  "txid":"70657bd8a67018d44053731255bb1a11cb0b20c15a2413c77f04d2ee7ca05c6d",
-		// 			  "vout":0,
-		// 			  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
-		// 			  "amount":0.05
-		// 			})
-		// 		]
-		// 	);
+		sinon
+			.stub(Insight.prototype, 'getUnspentUtxos')
+			.yields(
+				null,
+				[	new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"7e83a32325216a12d83979dc0f1f8fd42b2b7144e80f327cd3710fa34c209d91",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.5
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"807905736ba868a179f675964569a9bb396633505ba2a7840f695e8981fc33f3",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.2
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"eee2073abb3ac431fa9c5eeaac64f5c1cc05752de8b6febe4e705322d06fdbed",
+					  "vout":0,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.15
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"8c1524a5f1507ce1d958f74c46e2bc4f473415203e13fc7597c87891468bbf06",
+					  "vout":1,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.8777
+					}),
+					new bitcore.Transaction.UnspentOutput.fromObject({
+						"address":"mfeStRvHZeaEDFL1jascHdhKdMFT86KFvr",
+					  "txid":"70657bd8a67018d44053731255bb1a11cb0b20c15a2413c77f04d2ee7ca05c6d",
+					  "vout":0,
+					  "scriptPubKey":"76a914016ac79b56cc72a7cef8ab86b85bc606f45a2e3688ac",
+					  "amount":0.05
+					})
+				]
+			);
 
 		sinon
 			.stub(Insight.prototype, 'broadcast')
 			.yields(null, validTransactionId);
 
-		// sinon
-		// 	.stub(Insight.prototype, 'requestGet')
-		// 	.withArgs('/api/tx/' + validTransactionId)
-		// 	.yields(null, '', transactionData);
+		sinon
+			.stub(Insight.prototype, 'requestGet')
+			.withArgs('/api/tx/' + validTransactionId)
+			.yields(null, '', transactionData);
 
 		done();
 	});
@@ -194,24 +194,24 @@ describe('bitcore-easy', function (){
 			});
 	});
 
-	describe('#getConfirmedWalletTotal', function (done) {
-		it('excepts with an invalid public address', function () {
-			expect(function(){
-				BitcoreEasy.getConfirmedWalletTotal(invalidPublicAddress, true);
-			}).to.throw(BitcoreEasy.errors.PUBLIC_ADDRESS_MUST_BE_VALID);
-		});
-
-		it('returns a numeric wallet value equaling the sum of satoshis from utxos', function(done) {
-			this.timeout(60000);
-
-			BitcoreEasy.getConfirmedWalletTotal(validPublicAddress, true)
-				.then(function(walletTotal) {
-					walletTotal.should.be.a('number');
-					walletTotal.should.equal(validPublicAddressSatoshis);
-					done();
-				});
-			});
-	});
+	// describe('#getConfirmedWalletTotal', function (done) {
+	// 	it('excepts with an invalid public address', function () {
+	// 		expect(function(){
+	// 			BitcoreEasy.getConfirmedWalletTotal(invalidPublicAddress, true);
+	// 		}).to.throw(BitcoreEasy.errors.PUBLIC_ADDRESS_MUST_BE_VALID);
+	// 	});
+	//
+	// 	it('returns a numeric wallet value equaling the sum of satoshis from utxos', function(done) {
+	// 		this.timeout(60000);
+	//
+	// 		BitcoreEasy.getConfirmedWalletTotal(validPublicAddress, true)
+	// 			.then(function(walletTotal) {
+	// 				walletTotal.should.be.a('number');
+	// 				walletTotal.should.equal(validPublicAddressSatoshis);
+	// 				done();
+	// 			});
+	// 		});
+	// });
 
 	describe('#buildSimpleTransaction', function (done) {
 		it('excepts if an empty list of utxos is given', function () {
