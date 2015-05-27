@@ -319,7 +319,6 @@ module.exports = {
 	privateKeyIsValid: privateKeyIsValid,
 	getWalletUtxos: getWalletUtxos,
 	getWalletTotal: getWalletTotal,
-	getConfirmedWalletTotal: getConfirmedWalletTotal,
 	buildSimpleTransaction: buildSimpleTransaction,
 	broadcastTransaction: broadcastTransaction,
 	getTransactionInfo: getTransactionInfo
