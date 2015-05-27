@@ -132,6 +132,30 @@ function getWalletUtxos(publicAddress, testnet) {
 	});
 }
 
+function getWalletInfo(publicAddress, testnet, includeTx) {
+	var network = getNetwork(testnet),
+		insight = getInsight(testnet),
+		txInclusion = '';
+
+		if (!publicAddressIsValid(publicAddress, network.networkData)){
+			throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
+		}
+
+		if (!includeTx) {
+			txInclusion = '?noTxList=1';
+		}
+
+		return new Promise(function(resolve, reject) {
+			insight.requestGet('/api/addr/' + publicAddress + txInclusion, function (err, res, body) {
+			  if (err) {
+			  	reject(err);
+			  } else {
+			  	resolve(JSON.parse(body));
+			  }
+			});
+		});
+}
+
 /**
 * Returns the total wallet value based on unspent transactions outputs (utxos)
 *
@@ -160,47 +184,6 @@ function getWalletTotal(publicAddress, testnet) {
 			.catch(function(error) {
 
 			});
-	});
-}
-
-/**
-* Returns the total confirmed wallet value based on unspent transactions outputs
-* (utxos)
-*
-* @param {string} publicAddress The public address to check for utxos
-* @param {boolean} testnet Indicates if testnet or livenet will be used
-* @param {number} confirmations The number of confirmations needed for a
-*																transaction to be valid
-* @param {Promise} A promise that resolves with the total on the wallet
-*/
-function getConfirmedWalletTotal(publicAddress, testnet, confirmations) {
-	var network = getNetwork(testnet),
-		insight = getInsight(testnet),
-		walletTotal = 0;
-
-	if (!publicAddressIsValid(publicAddress, network.networkData)){
-		throw errors.PUBLIC_ADDRESS_MUST_BE_VALID;
-	}
-
-	return getWalletUtxos(publicAddress, testnet)
-	.then(function(utxos) {
-		var checked = 0;
-		console.log('GOT UTXOS');
-
-		return Promise.all(_.map(utxos, function(item) {
-			return getTransactionInfo(item.txId, testnet);
-		}));
-	})
-	.then(function(data){
-		console.log('GOT ALL INFO');
-		data.forEach(function (element, index, array) {
-			console.log('TX INFOS: ', element);
-		});
-
-		console.log('TOTOTAL: ', walletTotal);
-	})
-	.catch(function(error) {
-		console.log('ERROR: ', error);
 	});
 }
 

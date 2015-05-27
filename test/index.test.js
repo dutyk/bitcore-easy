@@ -194,25 +194,6 @@ describe('bitcore-easy', function (){
 			});
 	});
 
-	// describe('#getConfirmedWalletTotal', function (done) {
-	// 	it('excepts with an invalid public address', function () {
-	// 		expect(function(){
-	// 			BitcoreEasy.getConfirmedWalletTotal(invalidPublicAddress, true);
-	// 		}).to.throw(BitcoreEasy.errors.PUBLIC_ADDRESS_MUST_BE_VALID);
-	// 	});
-	//
-	// 	it('returns a numeric wallet value equaling the sum of satoshis from utxos', function(done) {
-	// 		this.timeout(60000);
-	//
-	// 		BitcoreEasy.getConfirmedWalletTotal(validPublicAddress, true)
-	// 			.then(function(walletTotal) {
-	// 				walletTotal.should.be.a('number');
-	// 				walletTotal.should.equal(validPublicAddressSatoshis);
-	// 				done();
-	// 			});
-	// 		});
-	// });
-
 	describe('#buildSimpleTransaction', function (done) {
 		it('excepts if an empty list of utxos is given', function () {
 			expect(function () {
