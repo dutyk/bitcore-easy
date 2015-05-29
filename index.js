@@ -311,6 +311,8 @@ function getTransactionInfo(txid, testnet) {
 }
 
 module.exports = {
+	bitcore: bitcore,
+	explorers: explorers,
 	errors: errors,
 	getNetwork: getNetwork,
 	getInsight: getInsight,
